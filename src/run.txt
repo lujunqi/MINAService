@@ -1,0 +1,2 @@
+export CLASSPATH=$CLASSPATH:/home/ljq/minaserver/lib/mina-core-2.0.9.jar:/home/ljq/minaserver/lib/slf4j-api-1.7.7.jar
+nohup java com.prism.mina.ioudp.server.MinaNatUdpServer&
