@@ -1,12 +1,9 @@
 package com.prism.mina.ioudp.server;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.Date;
-import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -88,7 +85,7 @@ public class MinaNatUdpServer {
 			public void messageReceived(IoSession session, Object message)
 					throws Exception {
 				IoBuffer buff = (IoBuffer) message;
-				
+
 				if (buff.limit() == 8) {// 状态
 					char type = buff.getChar(); // 老师 或 学生
 					char io = buff.getChar(); // 开通 关闭 唤醒
@@ -96,64 +93,49 @@ public class MinaNatUdpServer {
 
 					session.setAttribute("TYPE", type);
 					session.setAttribute("ID", id);
+					// Collection<IoSession> sessions = session.getService()
+					// .getManagedSessions().values();
+
+					// session.setAttribute("file_name",
+					// (UUID.randomUUID().toString()).replaceAll("-", "_"));
+					// session.setAttribute("start_mark", new Date().getTime());
+					//
+					// for (IoSession sess : sessions) {
+					// if (sess.getId() == session.getId()) {
+					// continue;
+					// }
+					// if (io == 'W') {
+					// int id2 = Integer.parseInt(sess.getAttribute("ID")
+					// + "");
+					// if (id2 != id) {
+					// continue;
+					// }
+					// }
+					//
+					// IoBuffer buf = IoBuffer.allocate(8);
+					// buf.setAutoExpand(true);
+					// buf.putChar(type);
+					// buf.putChar(io);
+					// buf.putInt(id);
+					// buf.flip();
+					// sess.write(buf);
+					//
+					// }
+				} else if (buff.limit() > 8) {
 					Collection<IoSession> sessions = session.getService()
 							.getManagedSessions().values();
+					char type = buff.getChar(); // 老师 或 学生
+					char io = buff.getChar(); // 开通 关闭 唤醒
+					int from = buff.getInt(); // from
+					int to = buff.getInt(); // to
 
-					session.setAttribute("file_name",
-							(UUID.randomUUID().toString()).replaceAll("-", "_"));
+					for (IoSession sess : sessions) {
+						if (Integer.parseInt(sess.getAttribute("ID") + "") == to) {
+							sess.write(message);
+						}
+
+					}
 					session.setAttribute("start_mark", new Date().getTime());
-
-					for (IoSession sess : sessions) {
-						if (sess.getId() == session.getId()) {
-							continue;
-						}
-						if (io == 'W') {
-							int id2 = Integer.parseInt(sess.getAttribute("ID")
-									+ "");
-							if (id2 != id) {
-								continue;
-							}
-						}
-
-						IoBuffer buf = IoBuffer.allocate(8);
-						buf.setAutoExpand(true);
-						buf.putChar(type);
-						buf.putChar(io);
-						buf.putInt(id);
-						buf.flip();
-						sess.write(buf);
-
-					}
-				} else {
-					Collection<IoSession> sessions = session.getService()
-							.getManagedSessions().values();
-					Object file_name = session.getAttribute("file_name");
-
-					if (file_name != null) {
-
-						RandomAccessFile raf = new RandomAccessFile(new File(
-								"e:/temp/mina_data/" + file_name), "rw");
-						long start = Long.parseLong(session
-								.getAttribute("start_mark") + "");
-						long fileLength = raf.length();
-						raf.seek(fileLength);
-						long end = new Date().getTime();
-						raf.write((int) (end - start));// 时间戳
-						byte[] b = new byte[buff.limit()];
-						buff.get(b);
-						buff.flip();
-						raf.write(b.clone());
-						raf.write('\n');
-						raf.close();
-					}
-					for (IoSession sess : sessions) {
-						if (sess.getId() == session.getId()) {
-							continue;
-						}
-
-						sess.write(message);
-					}
-//					session.setAttribute("start_mark", new Date().getTime());
 				}
 			}
 		});
